@@ -194,22 +194,23 @@ class Emitter(object):
 
                 met_fields = self.method_fields(handler, get_fields)
 
-                for f in data._meta.local_fields + data._meta.virtual_fields:
-                    if f.serialize and not any([ p in met_fields for p in [ f.attname, f.name ]]):
-                        if not f.rel:
-                            if f.attname in get_fields:
-                                ret[f.attname] = _any(v(f))
-                                get_fields.remove(f.attname)
-                        else:
-                            if f.attname[:-3] in get_fields:
-                                ret[f.name] = _fk(data, f)
-                                get_fields.remove(f.name)
+                if hasattr(data, '_meta'):
+                    for f in data._meta.local_fields + data._meta.virtual_fields:
+                        if f.serialize and not any([ p in met_fields for p in [ f.attname, f.name ]]):
+                            if not f.rel:
+                                if f.attname in get_fields:
+                                    ret[f.attname] = _any(v(f))
+                                    get_fields.remove(f.attname)
+                            else:
+                                if f.attname[:-3] in get_fields:
+                                    ret[f.name] = _fk(data, f)
+                                    get_fields.remove(f.name)
 
-                for mf in data._meta.many_to_many:
-                    if mf.serialize and mf.attname not in met_fields:
-                        if mf.attname in get_fields:
-                            ret[mf.name] = _m2m(data, mf)
-                            get_fields.remove(mf.name)
+                    for mf in data._meta.many_to_many:
+                        if mf.serialize and mf.attname not in met_fields:
+                            if mf.attname in get_fields:
+                                ret[mf.name] = _m2m(data, mf)
+                                get_fields.remove(mf.name)
 
                 # try to get the remainder of fields
                 for maybe_field in get_fields:
@@ -247,8 +248,9 @@ class Emitter(object):
                                 ret[maybe_field] = _any(handler_f(data))
 
             else:
-                for f in data._meta.fields:
-                    ret[f.attname] = _any(getattr(data, f.attname))
+                if hasattr(data, '_meta'):
+                    for f in data._meta.fields:
+                        ret[f.attname] = _any(getattr(data, f.attname))
 
                 fields = dir(data.__class__) + ret.keys()
                 add_ons = [k for k in dir(data) if k not in fields]
