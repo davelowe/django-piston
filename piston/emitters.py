@@ -216,7 +216,8 @@ class Emitter(object):
                 for maybe_field in get_fields:
                     if isinstance(maybe_field, (list, tuple)):
                         model, fields = maybe_field
-                        inst = getattr(data, model, None)
+                        if hasattr(data, model):
+                            inst = getattr(data, model, None)
 
                         if inst:
                             if hasattr(inst, 'all'):
